@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Data
+data/
+*.zip
+*.tar.gz
+
+# Outputs
+models/
+outputs/
+
+# IDEs
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
