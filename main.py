@@ -66,7 +66,7 @@ class CNN(nn.Module):
 
 model = CNN()
 model.to(device)
-
+#  hii it's the new branch
 
 
 # Done:
