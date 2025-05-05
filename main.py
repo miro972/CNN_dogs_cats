@@ -1,13 +1,11 @@
 import torch  # a directory with a lot of data utilities(in this project i used raw torch just for GPU usage)
 import torch.nn as nn  # didn't use yet because i didnt start the neural network build
-import torch.nn.functional as F  # still, honestly doesn't know what is this functional as f
-
 import torch.optim as optim  # this would implement the adam algorithem i guess
 import torchvision  # incredible library that handle data manipulations and storage such as transforms or ImageFolder
 import matplotlib.pyplot as plt  # another tool that has a platform for image printing
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # config the nn calculation to run on GPU(if can)
-path_to_data = "C:/Users/user/CNN Dogs_Cats/DATA/CNN First project"  # my data path
+path_to_data = "C:/Users/Matan/PycharmProjects/CNN_dogs_cats/DATA/CNN First project/dogs_vs_cats"  # my data path
 
 image_size = 128  # instance created for resize the images in future(in transforms)
 
@@ -61,11 +59,53 @@ class CNN(nn.Module):
         x = self.fc1(x)
         x = self.relu(x)
         x = self.fc2(x)
+        print(x)
         return x
 
 
 model = CNN()
 model.to(device)
+loss_fn = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters(), lr=0.01)
+for epoch in range(5):
+    print(f"Starting Epoch {epoch+1}/5")
+    i = 0
+    total_epoch_loss = 0
+    model.train()
+
+    for batch_idx, (images, labels) in enumerate(train_loader):
+
+        images = images.to(device)
+        labels = labels.to(device)
+        optimizer.zero_grad()
+        outputs = model(images)
+        loss = loss_fn(outputs, labels)
+        total_epoch_loss += loss.item()
+        loss.backward()
+        optimizer.step()
+        i = i+1
+
+        pass
+    with torch.no_grad():
+        model.eval()
+        correct = 0
+        total = 0
+        for batch_idx, (images, labels) in enumerate(test_loader):
+            images = images.to(device)
+            labels = labels.to(device)
+            outputs = model(images)
+            preds = torch.argmax(outputs, dim=1)
+            correct += (preds == labels).sum().item()
+            total += labels.size(0)
+        accuracy = correct / total
+        print(f"Validation Accuracy: {accuracy * 100:.2f}%")
+
+    print(f"avarage epoch loss is {total_epoch_loss / i}")
+    print(f"Finished Epoch {epoch+1}/5")
+
+torch.save(model.state_dict(), "cnn_dogs_cats_model.pth")
+print("model saved successfully")
+
 #  hii it's the new branch
 
 
@@ -73,10 +113,15 @@ model.to(device)
 # - Data loading
 # - Transform
 # - CNN definition (conv, relu, pool, fc)
-
-# Next:
 # - Loss function (maybe CrossEntropyLoss)
 # - Optimizer (Adam)
+
+# Next:
+
 # - Training loop (forward, backward, step)
+# - Visualization graph
 # - Validation loop
 # - Save model
+#  Confusion matrix
+#  augmantation
+#  for every 5 epochs vlidatoion and accuracy graph
