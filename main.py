@@ -37,71 +37,73 @@ test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=16, shuffle=F
 # before sending to the CNN
 
 
-class CNN(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.conv1 = nn.Conv2d(3, 16, 3, 1)
-        self.conv2 = nn.Conv2d(16, 32, 3, 1)
-        self.relu = nn.ReLU()
-        self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
-        self.flatten = nn.Flatten()
-        self.fc1 = nn.Linear(28800, 128)
-        self.fc2 = nn.Linear(128, 2)
+class CNN(nn.Module):  # Creating a CNN class to set the CNN flow and arrtributes, also it inherits the nn.Module
+    # that holds important and usefull CNN utilities such as
+    def __init__(self):  # The constructor to create a CNN object
+        super().__init__()  # send it to the father initialization
+        self.conv1 = nn.Conv2d(3, 16, 3, 1)  # First conv_layer
+        self.conv2 = nn.Conv2d(16, 32, 3, 1)  # Second conv_layer
+        self.relu = nn.ReLU()  # Activation to highlight important patterns
+        self.pool = nn.MaxPool2d(kernel_size=2, stride=2)  # pool highest pixel value of 4x4 set to reduce size
+        # and improve flow of the calculations.
+        self.flatten = nn.Flatten()  # Flattening the tensor for the fc layer
+        self.fc1 = nn.Linear(28800, 128)  # First fc_layer
+        self.fc2 = nn.Linear(128, 2)  # Second fc_layer
 
-    def forward(self, image_input):
-        conv1_result = self.conv1(image_input)
-        relu1_result = self.relu(conv1_result)
-        pull1_result = self.pool(relu1_result)
-        conv2_result = self.conv2(pull1_result)
-        relu2_result = self.relu(conv2_result)
-        pull2_result = self.pool(relu2_result)
-        x = self.flatten(pull2_result)
-        x = self.fc1(x)
-        x = self.relu(x)
-        x = self.fc2(x)
-        print(x)
+    def forward(self, image_input):  # in the above, we set the utilities that we *will* use, here we set the
+        # actual CNN flow and process
+        conv1_result = self.conv1(image_input)  # First, we conv the batch
+        relu1_result = self.relu(conv1_result)  # then, we highlight important patterns(zeroing negative values)
+        pool1_result = self.pool(relu1_result)  # pool the highest pixel values
+        conv2_result = self.conv2(pool1_result)  # We conv the batch again
+        relu2_result = self.relu(conv2_result)  # we highlight important patterns(zeroing negative values) again
+        pool2_result = self.pool(relu2_result)  # pool the highest pixel values again
+        x = self.flatten(pool2_result)  # Finished the conv, now we flatten the data as preparation for the fc layer
+        x = self.fc1(x)  # apply fc layer
+        x = self.relu(x)  # apply relu again to highlight important patterns even though we "finished the calculations"
+        x = self.fc2(x)  # apply final fc layer
         return x
 
 
-model = CNN()
-model.to(device)
-loss_fn = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=0.01)
-for epoch in range(5):
-    print(f"Starting Epoch {epoch+1}/5")
-    i = 0
-    total_epoch_loss = 0
-    model.train()
+model = CNN()  # Creating a CNN object named model
+model.to(device)  # configing the model to run on the gpu (if ther eis one) for faster calculations
+loss_fn = nn.CrossEntropyLoss()  # defining loss_fn to be a CrossEntropy loss
+optimizer = optim.Adam(model.parameters(), lr=0.01)  # defining optimizer to change the weights later
+for epoch in range(5):  # running in a loop 5 times (5 epoch that runs upon all the data)
+    print(f"Starting Epoch {epoch + 1}/5")  # indication of where we are
+    i = 0  # meant to count the number of batchs to calculate avarage loss(why and how?)
+    total_epoch_loss = 0  # total of epoch loss to calculate avaraage loss
+    model.train()  # why do we activate .train and not .forward??
 
-    for batch_idx, (images, labels) in enumerate(train_loader):
+    for batch_idx, (images, labels) in enumerate(train_loader):  # run upon the whole train loader by seperated batches
+        images = images.to(device)  # what does that mean
+        labels = labels.to(device)  # what does that mean
+        optimizer.zero_grad()  # preparing the surface to change the gradients(weights)
+        outputs = model(images)  # again, why we activate model fnc and not the forward that we wrote
+        loss = loss_fn(outputs, labels)  # loss calculation - need in depth explanation (my idea is that it taked
+        # the outputs that holds the werights and the labels maybe of the fully connected, and then compare
+        # them to the real lables so it know if the prediction is wrong and by how )
+        total_epoch_loss += loss.item()  # takes the loss of any individual image(or batch)
+        loss.backward()  # what does that do
+        optimizer.step()  # i know its the adam but it is still unclear
+        i = i + 1  # counts number of batches or individual images?
 
-        images = images.to(device)
-        labels = labels.to(device)
-        optimizer.zero_grad()
-        outputs = model(images)
-        loss = loss_fn(outputs, labels)
-        total_epoch_loss += loss.item()
-        loss.backward()
-        optimizer.step()
-        i = i+1
-
-        pass
-    with torch.no_grad():
-        model.eval()
-        correct = 0
-        total = 0
-        for batch_idx, (images, labels) in enumerate(test_loader):
-            images = images.to(device)
-            labels = labels.to(device)
-            outputs = model(images)
-            preds = torch.argmax(outputs, dim=1)
-            correct += (preds == labels).sum().item()
-            total += labels.size(0)
+    with torch.no_grad():  # use the no grad because we are not mean to change any weights as it is test data
+        model.eval()  # what is this fnc
+        correct = 0  # we want to check the accuracy
+        total = 0  # total of samples sampled
+        for batch_idx, (images, labels) in enumerate(test_loader):  # running upon test data
+            images = images.to(device)  # to device
+            labels = labels.to(device)  # to device
+            outputs = model(images)  # get the results (in what format)?
+            preds = torch.argmax(outputs, dim=1)  # dont understand this line
+            correct += (preds == labels).sum().item()  # count the correct preds but how?
+            total += labels.size(0)  # ???
         accuracy = correct / total
         print(f"Validation Accuracy: {accuracy * 100:.2f}%")
 
     print(f"avarage epoch loss is {total_epoch_loss / i}")
-    print(f"Finished Epoch {epoch+1}/5")
+    print(f"Finished Epoch {epoch + 1}/5")
 
 torch.save(model.state_dict(), "cnn_dogs_cats_model.pth")
 print("model saved successfully")
