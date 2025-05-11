@@ -29,15 +29,6 @@ test_transform = torchvision.transforms.Compose([  # compose mean something like
 train_dataset = torchvision.datasets.ImageFolder(root=path_to_data + '/train', transform=train_transforms)  # Get images
 test_dataset = torchvision.datasets.ImageFolder(root=path_to_data + '/test', transform=test_transform)  # Get images
 
-#  print(train_dataset.classes)
-#  print(train_dataset.class_to_idx)
-
-# for img, lbl in train_dataset:
-#     if lbl == 1:
-#         dog_img = img
-#         break
-# plt.imshow(dog_img.permute(1, 2, 0))  # for using plt we nee
-
 train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=4)  # Final preparing
 # before sending to the CNN
 test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=16, shuffle=False, num_workers=4)  # Final preparing
