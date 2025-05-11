@@ -5,20 +5,29 @@ import torchvision  # incredible library that handle data manipulations and stor
 import matplotlib.pyplot as plt  # another tool that has a platform for image printing
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # config the nn calculation to run on GPU(if can)
-path_to_data = "C:/Users/Matan/PycharmProjects/CNN_dogs_cats/DATA/CNN First project/dogs_vs_cats"  # my data path
+path_to_data = "C:/Users/user/CNN Dogs_Cats/REDUCED DATA/REDUCED DATA SETS"  # my data path
 
 image_size = 128  # instance created for resize the images in future(in transforms)
 
-transform = torchvision.transforms.Compose([  # compose mean something like "these adjusts are going to be made:"
+train_transforms = torchvision.transforms.Compose([
+    torchvision.transforms.Resize(image_size),
+    torchvision.transforms.CenterCrop(image_size),
+    torchvision.transforms.RandomHorizontalFlip(),
+    torchvision.transforms.RandomRotation(10),
+    torchvision.transforms.ColorJitter(brightness=0.2, contrast=0.2),
+    torchvision.transforms.ToTensor()
+])
+
+test_transform = torchvision.transforms.Compose([  # compose mean something like "these adjusts are going to be made:"
     torchvision.transforms.Resize(image_size),  # here we are config the resize to be image size 128
-    torchvision.transforms.CenterCrop(128),  # the problem of Resize function is that it changes the horizontal
+    torchvision.transforms.CenterCrop(image_size),  # the problem of Resize function is that it changes the horizontal
     # too in ration so we cropping it to get a square witch is easier for the calculations
     torchvision.transforms.ToTensor()  # it's important to transform the PIL image to a tensor for CNN calculations
 ])
 #  now we yet activate the transform, we just set it to the right configurations, we will activate it in ImageFolder
 
-train_dataset = torchvision.datasets.ImageFolder(root=path_to_data + '/train', transform=transform)  # Get images
-test_dataset = torchvision.datasets.ImageFolder(root=path_to_data + '/test', transform=transform)  # Get images
+train_dataset = torchvision.datasets.ImageFolder(root=path_to_data + '/train', transform=train_transforms)  # Get images
+test_dataset = torchvision.datasets.ImageFolder(root=path_to_data + '/test', transform=test_transform)  # Get images
 
 #  print(train_dataset.classes)
 #  print(train_dataset.class_to_idx)
@@ -65,65 +74,48 @@ class CNN(nn.Module):  # Creating a CNN class to set the CNN flow and arrtribute
         return x
 
 
-model = CNN()  # Creating a CNN object named model
-model.to(device)  # configing the model to run on the gpu (if ther eis one) for faster calculations
-loss_fn = nn.CrossEntropyLoss()  # defining loss_fn to be a CrossEntropy loss
-optimizer = optim.Adam(model.parameters(), lr=0.01)  # defining optimizer to change the weights later
-for epoch in range(5):  # running in a loop 5 times (5 epoch that runs upon all the data)
-    print(f"Starting Epoch {epoch + 1}/5")  # indication of where we are
-    i = 0  # meant to count the number of batchs to calculate avarage loss(why and how?)
-    total_epoch_loss = 0  # total of epoch loss to calculate avaraage loss
-    model.train()  # why do we activate .train and not .forward??
+if __name__ == '__main__':
+    model = CNN()  # Creating a CNN object named model
+    model.to(device)  # configing the model to run on the gpu (if ther eis one) for faster calculations
+    loss_fn = nn.CrossEntropyLoss()  # defining loss_fn to be a CrossEntropy loss
+    optimizer = optim.Adam(model.parameters(), lr=0.001)  # defining optimizer to change the weights later
+    for epoch in range(15):  # running in a loop 5 times (5 epoch that runs upon all the data)
+        print(f"Starting Epoch {epoch + 1}/15")  # indication of where we are
+        i = 0  # meant to count the number of batchs to calculate avarage loss(why and how?)
+        total_epoch_loss = 0  # total of epoch loss to calculate avaraage loss
+        model.train()  # why do we activate .train and not .forward??
 
-    for batch_idx, (images, labels) in enumerate(train_loader):  # run upon the whole train loader by seperated batches
-        images = images.to(device)  # what does that mean
-        labels = labels.to(device)  # what does that mean
-        optimizer.zero_grad()  # preparing the surface to change the gradients(weights)
-        outputs = model(images)  # again, why we activate model fnc and not the forward that we wrote
-        loss = loss_fn(outputs, labels)  # loss calculation - need in depth explanation (my idea is that it taked
-        # the outputs that holds the werights and the labels maybe of the fully connected, and then compare
-        # them to the real lables so it know if the prediction is wrong and by how )
-        total_epoch_loss += loss.item()  # takes the loss of any individual image(or batch)
-        loss.backward()  # what does that do
-        optimizer.step()  # i know its the adam but it is still unclear
-        i = i + 1  # counts number of batches or individual images?
+        for batch_idx, (images, labels) in enumerate(
+                train_loader):  # run upon the whole train loader by seperated batches
+            images = images.to(device)  # what does that mean
+            labels = labels.to(device)  # what does that mean
+            optimizer.zero_grad()  # preparing the surface to change the gradients(weights)
+            outputs = model(images)  # again, why we activate model fnc and not the forward that we wrote
+            loss = loss_fn(outputs, labels)  # loss calculation - need in depth explanation (my idea is that it taked
+            # the outputs that holds the werights and the labels maybe of the fully connected, and then compare
+            # them to the real lables so it know if the prediction is wrong and by how )
+            total_epoch_loss += loss.item()  # takes the loss of any individual image(or batch)
+            loss.backward()  # what does that do
+            optimizer.step()  # i know its the adam but it is still unclear
+            i = i + 1  # counts number of batches or individual images?
 
-    with torch.no_grad():  # use the no grad because we are not mean to change any weights as it is test data
-        model.eval()  # what is this fnc
-        correct = 0  # we want to check the accuracy
-        total = 0  # total of samples sampled
-        for batch_idx, (images, labels) in enumerate(test_loader):  # running upon test data
-            images = images.to(device)  # to device
-            labels = labels.to(device)  # to device
-            outputs = model(images)  # get the results (in what format)?
-            preds = torch.argmax(outputs, dim=1)  # dont understand this line
-            correct += (preds == labels).sum().item()  # count the correct preds but how?
-            total += labels.size(0)  # ???
-        accuracy = correct / total
-        print(f"Validation Accuracy: {accuracy * 100:.2f}%")
+        with torch.no_grad():  # use the no grad because we are not mean to change any weights as it is test data
+            model.eval()  # what is this fnc
+            correct = 0  # we want to check the accuracy
+            total = 0  # total of samples sampled
+            for batch_idx, (images, labels) in enumerate(test_loader):  # running upon test data
+                images = images.to(device)  # to device
+                labels = labels.to(device)  # to device
+                outputs = model(images)  # get the results (in what format)?
+                preds = torch.argmax(outputs, dim=1)  # dont understand this line
+                correct += (preds == labels).sum().item()  # count the correct preds but how?
+                total += labels.size(0)  # ???
+            accuracy = correct / total
+            print(f"Validation Accuracy: {accuracy * 100:.2f}%")
 
-    print(f"avarage epoch loss is {total_epoch_loss / i}")
-    print(f"Finished Epoch {epoch + 1}/5")
+        print(f"avarage epoch loss is {total_epoch_loss / i}")
+        print(f"Finished Epoch {epoch + 1}/15")
 
-torch.save(model.state_dict(), "cnn_dogs_cats_model.pth")
-print("model saved successfully")
+    torch.save(model.state_dict(), "cnn_dogs_cats_model.pth")
+    print("model saved successfully")
 
-#  hii it's the new branch
-
-
-# Done:
-# - Data loading
-# - Transform
-# - CNN definition (conv, relu, pool, fc)
-# - Loss function (maybe CrossEntropyLoss)
-# - Optimizer (Adam)
-
-# Next:
-
-# - Training loop (forward, backward, step)
-# - Visualization graph
-# - Validation loop
-# - Save model
-#  Confusion matrix
-#  augmantation
-#  for every 5 epochs vlidatoion and accuracy graph
