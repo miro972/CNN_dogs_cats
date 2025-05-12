@@ -5,7 +5,7 @@ import torchvision  # incredible library that handle data manipulations and stor
 import matplotlib.pyplot as plt  # another tool that has a platform for image printing
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # config the nn calculation to run on GPU(if can)
-path_to_data = "C:/Users/user/CNN Dogs_Cats/REDUCED DATA/REDUCED DATA SETS"  # my data path
+path_to_data = "C:/Users/Matan/PycharmProjects/CNN_dogs_cats/CORRECT DATA"  # my data path
 
 image_size = 128  # instance created for resize the images in future(in transforms)
 
@@ -13,7 +13,7 @@ train_transforms = torchvision.transforms.Compose([
     torchvision.transforms.Resize(image_size),
     torchvision.transforms.CenterCrop(image_size),
     torchvision.transforms.RandomHorizontalFlip(),
-    torchvision.transforms.RandomRotation(10),
+    torchvision.transforms.RandomAffine(degrees=10, translate=(0.1, 0.1), scale=(0.9, 1.1), shear=10),
     torchvision.transforms.ColorJitter(brightness=0.2, contrast=0.2),
     torchvision.transforms.ToTensor()
 ])
