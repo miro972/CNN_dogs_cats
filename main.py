@@ -36,7 +36,7 @@ train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=16, shuffle
 # before sending to the CNN
 test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=16, shuffle=False, num_workers=4)  # Final preparing
 
-# before sending to the CNN
+# before  sending to the CNN
 
 
 if __name__ == '__main__':
