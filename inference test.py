@@ -34,4 +34,6 @@ if __name__ == '__main__':
         print("Usage: python inference.py <image_path>")
     else:
         image_path = sys.argv[1]
-        print(f"The image path is: {image_path}")
+        result = predict(image_path)
+        print(f"Predicted class: {result}")
+
