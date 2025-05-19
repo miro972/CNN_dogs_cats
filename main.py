@@ -92,6 +92,7 @@ if __name__ == '__main__':
         print(f"Finished Epoch {epoch + 1}/{num_epochs}")
         print("-" * 30)
 
+
     print("finished training")
 
     torch.save(model.state_dict(), "cnn_dogs_cats_model.pth")
