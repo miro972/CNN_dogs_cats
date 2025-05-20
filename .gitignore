@@ -8,7 +8,6 @@ data/
 *.tar.gz
 
 # Outputs
-models/
 outputs/
 
 # IDEs
